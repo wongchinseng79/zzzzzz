@@ -58,18 +58,48 @@
         <a-sky id="sky" color="#C0C0C0" opacity="0"></a-sky>
 
         <!-- Load the ball-and-stick etomidate -->
-        <a-entity
-          id="etomidate-model"
-          obj-model="obj: #etomidate-obj; mtl: #etomidate-mtl"
-          position="0 0 0"
-          rotation="0 0 0"
-          scale="2 2 2"
-          class="clickable"
-          gesture-handler
-        ></a-entity>
+       <a-entity
+  id="etomidate-model"
+  obj-model="obj: #etomidate-obj; mtl: #etomidate-mtl"
+  position="0 0 0"
+  rotation="0 0 0"
+  scale="5 5 5"
+  class="clickable"
+  gesture-handler
+  pulse-opacity="min:0.25; max:1; speed:1.2"
+></a-entity>
+
       </a-marker>
 
       <a-entity camera></a-entity>
     </a-scene>
   </body>
 </html>
+<script>
+  AFRAME.registerComponent('pulse-opacity', {
+    schema: { min: {default: 0.25}, max: {default: 1.0}, speed: {default: 1.5} },
+    init: function () {
+      this.mats = [];
+      const collect = () => {
+        const mesh = this.el.getObject3D('mesh');
+        if (!mesh) return;
+        mesh.traverse(o => {
+          if (o.isMesh && o.material) {
+            const ms = Array.isArray(o.material) ? o.material : [o.material];
+            ms.forEach(m => { m.transparent = true; this.mats.push(m); });
+          }
+        });
+      };
+      // in case model already there, and also when loaded later
+      collect();
+      this.el.addEventListener('model-loaded', collect);
+    },
+    tick: function (t, dt) {
+      if (!dt) return;
+      const s = this.data.speed;
+      const phase = (t/1000) * s * Math.PI * 2;               // radians
+      const v = this.data.min + (this.data.max - this.data.min) * (0.5 + 0.5 * Math.sin(phase));
+      this.mats.forEach(m => { m.opacity = v; });
+    }
+  });
+</script>
